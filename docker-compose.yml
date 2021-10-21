@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: docker/php/Dockerfile
-    image: digitalocean.com/php
+#    image: digitalocean.com/php
     restart: unless-stopped
     tty: true
     environment:
@@ -24,12 +24,11 @@ services:
       context: .
       dockerfile: docker/frontend/Dockerfile
     restart: unless-stopped
-    entrypoint: /bin/bash
     tty: true
     ports:
       - "80:80"
     volumes:
-      - ./frontend:/var/www/frontend
+      - ./tools:/var/www/frontend
     working_dir: /var/www/frontend
     networks:
       - tools-backend-network
@@ -45,7 +44,7 @@ services:
       - "92:80"
     volumes:
       - ./backend:/var/www/backend
-      - ./frontend:/var/www/frontend
+      - ./tools:/var/www/frontend
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
       - tools-backend-network
