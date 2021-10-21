@@ -1,0 +1,80 @@
+version: '3'
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    volumes:
+      - ./backend:/var/www/backend
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - ./docker/php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+    working_dir: /var/www/backend
+    networks:
+      - tools-backend-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    tty: true
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/var/www/frontend
+    working_dir: /var/www/frontend
+    networks:
+      - tools-backend-network
+    depends_on:
+      - webserver
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "92:80"
+    volumes:
+      - ./backend:/var/www/backend
+      - ./frontend:/var/www/frontend
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - tools-backend-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.22
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_DATABASE: algolia
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: algolia@123
+    volumes:
+      - ./docker/dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - tools-backend-network
+
+#Docker Networks
+networks:
+  tools-backend-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
